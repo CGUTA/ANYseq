@@ -9,8 +9,6 @@ Channel
 
 process kallisto {
 	publishDir "$params.processed_folder/", mode: 'copy', saveAs: { filename -> "${id}_$filename" }
-	
-	scratch = true
 
     input:
     file transcriptome_index from file("$params.index")
