@@ -10,12 +10,17 @@ Channel
     .map{ tup-> tuple(tup[0], "PAIRED", tup[1][0], tup[1][1]) }
     .set { paired_ch }
 
+paired_ch
+    .mix(single_ch)
+    .tap(log1)
+    .set{experiments_ch}
+
 process kallisto {
     publishDir "$params.processed_folder/", mode: 'copy', saveAs: { filename -> "${id}_$filename" }
 
     input:
     file transcriptome_index from file("$params.index")
-    set id, type, fasta1, fasta2 from paired_ch.mix(single_ch).tap(log1)
+    set id, type, fasta1, fasta2 from experiments_ch
 
     output:
     file "abundance.tsv"
@@ -27,12 +32,12 @@ process kallisto {
     script:
         if( type ==  "PAIRED") {
         """
-        kallisto quant -i $transcriptome_index -o . -t ${params.NUM_THREADS} fasta1 fasta2
+        kallisto quant -i $transcriptome_index -o . -t ${params.NUM_THREADS} $fasta1 $fasta2
         """
         }  
         else if( type ==  "SINGLE"){
         """
-        kallisto quant -i $transcriptome_index -o . --single -l 200 -s 20 -bias -t ${params.NUM_THREADS} fasta1
+        kallisto quant -i $transcriptome_index -o . --single -l 200 -s 20 -bias -t ${params.NUM_THREADS} $fasta1
     """
         }
 
